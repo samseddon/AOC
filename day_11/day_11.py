@@ -1,4 +1,5 @@
 import math
+import numpy as np
 
 class Monkey:
     def __init__(self, starting_items, operation, test, throw_1,throw_2):
@@ -10,7 +11,7 @@ class Monkey:
         self.false_throw    = throw_2
         self.inspected      = 0
 
-    def operation(self, worry):
+    def operation(self, worry, divisor):
         if self.operation_val == 'old':
             easy_op = False
         else: 
@@ -18,11 +19,11 @@ class Monkey:
             easy_op = True
    
         if self.operation_func == '*' and easy_op == True:
-            return worry * operation_val
+            return (worry * operation_val) % divisor
         if self.operation_func == '+' and easy_op == True:
-            return worry + operation_val 
+            return (worry + operation_val) % divisor
         if easy_op == False:
-            return worry * worry 
+            return (worry * worry) % divisor
 
     def test_worry(self, worry):
         if worry % self.test == 0:
@@ -63,13 +64,16 @@ for i in range(len(Lines)):
                              int(Lines[i+3].strip().split(' ')[-1]),
                              int(Lines[i+4].strip().split(' ')[-1]),
                              int(Lines[i+5].strip().split(' ')[-1])))
+divisor = []
+for monkey in Monkeys:
+    divisor.append(monkey.test)
 
+divisor = np.lcm.reduce(divisor)
 for _ in range(10000):
     for monkey in Monkeys:
         for item in monkey.items:
             monkey.inspect()
-            worry = monkey.operation(item)
-            #worry = math.floor(worry/3)
+            worry = monkey.operation(item,divisor)
             next_monkey = monkey.where_throw_item(worry,monkey.test_worry(worry)) 
             monkey.throw()
             Monkeys[next_monkey].items.append(worry)
