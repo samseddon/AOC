@@ -1,4 +1,5 @@
 import pprint as p
+import numpy as np
 
 class Dictlist(dict):                                                          
     def __setitem__(self, key, value):                                         
@@ -60,12 +61,18 @@ for line in Lines:
     else:
         file_dict[pwd] = [line.split(' ')[1],line.split(' ')[0]] 
 
+print(len(all_dir))
+names = []
 for folder in all_dir:
+    names.append(folder.name)
     if folder.pwd in file_dict:
         for file in file_dict[folder.pwd]:
             folder.files.append(file[0])
             folder.file_size = folder.file_size + int(file[1])
 
+print(len(names))
+print(sorted(names))
+print(len(np.unique(names)))
 all_dir = sorted(all_dir,key=lambda x: x.level, reverse = True)
 
 for folder in all_dir:
@@ -88,15 +95,14 @@ for folder in all_dir:
         current_file_system = folder.total_size
     if folder.total_size < 100000:
         answer = answer + folder.total_size
-
 total_system = 70000000
 total_req = 30000000
 delete_threshold = -1*(total_system - current_file_system - total_req)
 
 all_dir = sorted(all_dir,key=lambda x: x.total_size, reverse = False)     
 
-for folder in all_dir:
-    if folder.total_size < delete_threshold:
-        pass
-    else:
-        print(folder.total_size,delete_threshold)
+#for folder in all_dir:
+#    if folder.total_size < delete_threshold:
+#        pass
+#    else:
+#        print(folder.total_size,delete_threshold)
