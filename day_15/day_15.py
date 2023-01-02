@@ -26,7 +26,7 @@ class Area:
         self.max_limit = max_val
         self.scan_area = []
         self.scan_area_new = []
-        
+        self.boundary = []
         self.x_range = abs(self.x_hig - self.x_low)
         self.y_range = abs(self.y_hig - self.y_low)
 
@@ -41,8 +41,12 @@ class Area:
             self.y_hig = sensor.s_y + sensor.diamond_limits 
    
     def update_lims(self):
-        self.x_range = abs(self.x_hig - self.x_low + 1)
-        self.y_range = abs(self.y_hig - self.y_low + 1)
+        self.x_range = abs(self.x_hig - self.x_low + 1 + 4)
+        self.y_range = abs(self.y_hig - self.y_low + 1 + 4)
+        self.x_low = self.x_low-2
+        self.x_hig = self.x_hig+2
+        self.y_low = self.y_low-2
+        self.y_hig = self.y_hig+2
 
     def initilise_array(self):
         row = []
@@ -99,21 +103,37 @@ class Area:
         print('x between', self.x_low, self.x_hig, 'with range', self.x_range)
         print('y between', self.y_low, self.y_hig, 'with range', self.y_range)
 
-    def add_point(self, x, y):
-        self.scan_area[y][x] = 5
+    def add_point(self, inner, outer):
+        for i in range(len(inner)):
+
+            if  0 + self.x_low < inner[i][0] < self.max_limit + self.x_low\
+            and 0 + self.y_low < inner[i][1] < self.max_limit + self.y_low\
+            and 0 + self.x_low < outer[i][0] < self.max_limit + self.x_low\
+            and 0 + self.y_low < outer[i][1] < self.max_limit + self.y_low:
+                self.boundary.append([inner[i],outer[i]])
+#        if x < self.max_limit and y < self.max_limit:
+#            self.boundary.append([x,y])
 
 class Boundary:
-    def __init__(self, m, offset, zero):
+    def __init__(self, m, c, zero_y, zero_x, sign_x, sign_y, bump):
         self.m = m
-        self.zero = zero
-        self.c = self.zero + offset
+        self.zero_x = zero_x
+        self.zero_y = zero_y
+        self.c = c
+        self.sign_x = sign_x
+        self.sign_y = sign_y
+        self.bump = bump
+        self.boundary = []
 
     def coord(self, x):
-        return ((self.m * x) + self.c)
+        return self.zero_x + self.sign_x * x,\
+                ((-1 * self.m  * self.sign_x * (x)) + self.zero_y - self.sign_y * (self.c + self.bump))
 
     def populate(self, area):
-        for i in range(self.c):
-            area.add_point(i, self.coord(i))
+        for i in range(abs(self.c) + 1 + self.bump):
+            x, y = self.coord(i)
+            if [x, y] not in self.boundary:
+               self.boundary.append([x,y])
     
     def print_all(self):
         print(vars(self).items())
@@ -138,19 +158,109 @@ for line in Lines:
     line_array = line.strip().split(' ')
     sensors.append(Sensor(line_array[2], line_array[3], line_array[-2], line_array[-1]))
     area.find_lims(sensors[-1])
-
 area.update_lims()
-sensors[6].print_all()
 area.initilise_array()
-area.add_sensor_data(sensors[6])
-
 for _ in range(len(sensors)):
-    _ = 6
-    sensors[_].print_all()
-    test_bound = Boundary(1,(-sensors[_].diamond_limits), sensors[_].s_x-area.x_low)
-    test_bound.print_all()
-    test_bound.populate(area)
+    area.add_sensor_data(sensors[_])
+    
+    
+    SW_inner_boundary = Boundary(-1,
+                  sensors[_].diamond_limits + 1,
+                  sensors[_].s_y - area.y_low, 
+                  sensors[_].s_x - area.x_low,
+                  -1,
+                  -1,
+                  0)
+    SW_inner_boundary.populate(area)
+    SW_outer_boundary = Boundary(-1,
+                  sensors[_].diamond_limits + 1,
+                  sensors[_].s_y - area.y_low, 
+                  sensors[_].s_x - area.x_low,
+                  -1,
+                  -1,
+                  1)
+    SW_outer_boundary.populate(area)
+    area.add_point(SW_inner_boundary.boundary, SW_outer_boundary.boundary)
+    
+    NW_inner_boundary = Boundary(1,
+                  sensors[_].diamond_limits + 1,
+                  sensors[_].s_y - area.y_low, 
+                  sensors[_].s_x - area.x_low,
+                  -1,
+                  1,
+                  0)
+    NW_inner_boundary.populate(area)
+    NW_outer_boundary = Boundary(1,
+                  sensors[_].diamond_limits + 1,
+                  sensors[_].s_y - area.y_low, 
+                  sensors[_].s_x - area.x_low,
+                  -1,
+                  1,
+                  1)
+    NW_outer_boundary.populate(area)
+    area.add_point(NW_inner_boundary.boundary, NW_outer_boundary.boundary)
+    
+    SE_inner_boundary = Boundary(1,
+                  sensors[_].diamond_limits + 1,
+                  sensors[_].s_y - area.y_low, 
+                  sensors[_].s_x - area.x_low,
+                  1,
+                  -1,
+                  0)
+    SE_inner_boundary.populate(area)
+    SE_outer_boundary = Boundary(1,
+                  sensors[_].diamond_limits + 1,
+                  sensors[_].s_y - area.y_low, 
+                  sensors[_].s_x - area.x_low,
+                  1,
+                  -1,
+                  1)
+    SE_outer_boundary.populate(area)
+    area.add_point(SE_inner_boundary.boundary, SE_outer_boundary.boundary)
 
+    NE_inner_boundary = Boundary(1,
+                  sensors[_].diamond_limits + 1,
+                  sensors[_].s_y - area.y_low, 
+                  sensors[_].s_x - area.x_low,
+                  1,
+                  -1,
+                  0)
+    NE_inner_boundary.populate(area)
+    NE_outer_boundary = Boundary(-1,
+                  sensors[_].diamond_limits + 1,
+                  sensors[_].s_y - area.y_low, 
+                  sensors[_].s_x - area.x_low,
+                  1,
+                  1,
+                  1)
+    NE_outer_boundary.populate(area)
+    area.add_point(NE_inner_boundary.boundary, NE_outer_boundary.boundary)
+#        NE = Boundary(-1,
+#                      sensors[_].diamond_limits + 1,
+#                      sensors[_].s_y - area.y_low, 
+#                      sensors[_].s_x - area.x_low,
+#                      1,
+#                      1,
+#                      i)
+#        NE.populate(area)
 
-print(area.scan_area)
+print(area.scan_area[(0-area.x_low):(20-area.x_low)][(0-area.y_low):(20-area.y_low)])
+print(area.scan_area[9][0])
 
+#        NW = Boundary(1,
+#                      sensors[_].diamond_limits + 1,
+#                      sensors[_].s_y - area.y_low, 
+#                      sensors[_].s_x - area.x_low,
+#                      -1,
+#                      1,
+#                      i)
+#        NW.populate(area)
+#        SE = Boundary(1,
+#                      sensors[_].diamond_limits + 1,
+#                      sensors[_].s_y - area.y_low, 
+#                      sensors[_].s_x - area.x_low,
+#                      1,
+#                      -1,
+#                      i)
+#        SE.populate(area)
+print(area.boundary)
