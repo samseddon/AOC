@@ -1,5 +1,6 @@
 import numpy as np
 
+
 class Sensor:
     def __init__(self, sensor_x, sensor_y, beacon_x, beacon_y):
         self.s_x = int(sensor_x[2:-1])
@@ -14,8 +15,7 @@ class Sensor:
 #        self.max_hor = abs(self.b_x-self.s_x) + abs(self.s_y - self.b_y)
 
     def print_all(self):
-        print('Sensor', self.s_x, self.s_y)
-        print('with beacon at', self.b_x, self.b_y)
+        print(vars(self).items())
 
 class Area: 
     def __init__(self,max_val):
@@ -92,12 +92,32 @@ class Area:
                # if sensor.s_y - self.y_low  - j == value: 
                #     self.scan_area[i - j] = 0
         #print(sensor.s_y,sensor.s_y - self.y_low, sensor.s_x,sensor.s_x - self.x_low)
-        self.scan_area[sensor.s_y - self.y_low][sensor.s_x - self.x_low] = 0
-        self.scan_area[sensor.b_y - self.y_low][sensor.b_x - self.x_low] = 0
+        self.scan_area[sensor.s_y - self.y_low][sensor.s_x - self.x_low] = 1
+        self.scan_area[sensor.b_y - self.y_low][sensor.b_x - self.x_low] = 1
 
     def print_all(self):
         print('x between', self.x_low, self.x_hig, 'with range', self.x_range)
         print('y between', self.y_low, self.y_hig, 'with range', self.y_range)
+
+    def add_point(self, x, y):
+        self.scan_area[y][x] = 5
+
+class Boundary:
+    def __init__(self, m, offset, zero):
+        self.m = m
+        self.zero = zero
+        self.c = self.zero + offset
+
+    def coord(self, x):
+        return ((self.m * x) + self.c)
+
+    def populate(self, area):
+        for i in range(self.c):
+            area.add_point(i, self.coord(i))
+    
+    def print_all(self):
+        print(vars(self).items())
+
 
 
 file = open('input_day_15.txt', 'r')
@@ -117,41 +137,20 @@ val = 10
 for line in Lines: 
     line_array = line.strip().split(' ')
     sensors.append(Sensor(line_array[2], line_array[3], line_array[-2], line_array[-1]))
-    #if sensors[-1].s_y - sensors[-1].diamond_limits < val and sensors[-1].s_y + sensors[-1].diamond_limits > val:
-     #   relevant_sensors.append(sensors[-1])
     area.find_lims(sensors[-1])
-#    area2.find_lims(sensors[-1])
-
-
-#_=6
-#line_array = Lines[_].strip().split(' ')
-#sensors.append(Sensor(line_array[2], line_array[3], line_array[-2], line_array[-1]))
-#area.find_lims(sensors[-1])
 
 area.update_lims()
-#area2.update_lims()
-#print(area.print_all())
-
+sensors[6].print_all()
 area.initilise_array()
 area.add_sensor_data(sensors[6])
+
+for _ in range(len(sensors)):
+    _ = 6
+    sensors[_].print_all()
+    test_bound = Boundary(1,(-sensors[_].diamond_limits), sensors[_].s_x-area.x_low)
+    test_bound.print_all()
+    test_bound.populate(area)
+
+
 print(area.scan_area)
-#area.initilise_array()
-#area2.init_different()
-#print(area2.scan_area)
-#        
-#for sensor in sensors:
-#    print(sensor.s_x, sensor.s_y)
-    #area.add_sensor_data(sensor)
-    #area2.new_sensor_data(sensor,val - area2.y_low)
-    #area2.beacon_sensor_check(sensor,val - area2.y_low)
-    #for _ in range(len(area2.scan_area)):   
-    #    if area2.scan_area[_] == 0 and area2.scan_area[i-1] == 1 and area2.scan_area[i+1] == 1:
-    #        print(i,_)
 
-#for i in range(1,len(sensors)):
-#    for j in range(1,len(sensors)):
-#        if sensors[i].s_x - sensors[j].s_x == 1 and  sensors[i].s_y - sensors[j].s_y == 1:
-#            print('here')
-    
-
-print(sum(area2.scan_area))
